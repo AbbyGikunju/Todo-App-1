@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -46,4 +47,55 @@ func INITPostgresDB() {
 		log.Fatal("Failed to connect to the database", err)
 	}
 	DB.AutoMigrate(Todo{})
+}
+
+
+//Create todo operation
+func CreateTodo (todo *Todo) (*Todo, error) {
+	res := DB.Create(&todo)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return todo, nil
+}
+
+//Read all todos operation
+func ReadTodos() ([]*Todo, error) {
+	var todos []*Todo
+	res  := DB.Find(&todos)
+	if res.Error != nil {
+		return nil, errors.New("no todo list found")
+	}
+	return todos, nil
+}
+
+//Read a todo operation
+func ReadTodo(id string) (*Todo,  error) {
+	var todo Todo
+	res := DB.First(&todo, "id= ?", id)
+	if res.RowsAffected == 0 {
+		return nil, fmt.Errorf("todo of id %s not found", id)
+	}
+	return &todo, nil
+}
+
+//Update todo operation
+func UpdateTodo(id string, todo *Todo) (*Todo, error) {
+	var todoToUpdate Todo
+	result := DB.Model(&todoToUpdate).Where("id = ?", id).Updates(todo)
+	if result.RowsAffected == 0 {
+		return &todoToUpdate, errors.New("todo not updates")
+	}
+	return todo, nil
+}
+
+
+//Delete Todo Operation
+func DeleteTodo(id string) error{
+	var deletedTodo Todo
+	result := DB.Where("id = ?", id).Delete(&deletedTodo)
+	if result.RowsAffected == 0 {
+		return errors.New("todo not deleted")
+	}
+	return nil
 }
